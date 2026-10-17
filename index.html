@@ -1,19 +1,26 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b12"><link rel="manifest" href="manifest.webmanifest"><title>NOVA</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#090b12;color:#f4f6fb;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif}
 main{min-height:100vh;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom);display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:22px 0}.orb{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#78b7ff 25%,#3156ff 55%,#111a55 75%);box-shadow:0 0 28px #4169ff99}
-h1{font-size:28px;margin:0}small{color:#9da6b8}.chat{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:#aeb6c7}.composer{display:flex;gap:8px;padding:12px 0 18px}.composer input{flex:1;background:#171b26;border:1px solid #303747;color:white;border-radius:22px;padding:13px 16px;font-size:16px}.composer button{border:0;border-radius:50%;width:48px;background:#3156ff;color:white;font-size:20px}
-.msg{max-width:85%;margin:8px 0;padding:12px 15px;border-radius:18px;background:#171b26;text-align:left}.user{margin-left:auto;background:#263c91}
+h1{font-size:28px;margin:0}small{color:#9da6b8}.status{margin-left:auto;font-size:12px;color:#7f8aa3}
+#chat{flex:1;overflow:auto;padding:10px 0}.welcome{text-align:center;color:#aeb6c7;margin-top:30vh}.msg{max-width:86%;margin:8px 0;padding:12px 15px;border-radius:18px;background:#171b26;white-space:pre-wrap}.user{margin-left:auto;background:#263c91}
+.composer{display:flex;gap:8px;padding:12px 0 18px}.composer input{flex:1;background:#171b26;border:1px solid #303747;color:white;border-radius:22px;padding:13px 16px;font-size:16px;outline:none}.composer button{border:0;border-radius:50%;width:48px;height:48px;background:#3156ff;color:white;font-size:19px}.composer .mic{background:#20283a}.listening .mic{background:#c73858}
 </style></head><body><main>
-<header><div class="orb"></div><div><h1>NOVA</h1><small>Assistant central — iPhone</small></div></header>
-<section id="chat" class="chat"><div>Bonjour. NOVA est prête à être configurée.</div></section>
-<form id="form" class="composer"><input id="input" autocomplete="off" placeholder="Parle à NOVA…"><button>➤</button></form>
-</main>
-<script>
-const chat=document.querySelector('#chat'), form=document.querySelector('#form'), input=document.querySelector('#input');
-function add(text,cls){if(chat.classList.contains('chat'))chat.classList.remove('chat');const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
-form.onsubmit=e=>{e.preventDefault();let t=input.value.trim();if(!t)return;add(t,'user');input.value='';setTimeout(()=>add("Je t’écoute. Le noyau NOVA peut maintenant être relié à tes services et à la voix.",'nova'),300)}
+<header><div class="orb"></div><div><h1>NOVA</h1><small>Assistant central — V46</small></div><div id="status" class="status">prête</div></header>
+<section id="chat"><div class="welcome">Bonjour. Je suis NOVA.<br>Appuie sur 🎙️ pour parler.</div></section>
+<form id="form" class="composer"><input id="input" autocomplete="off" placeholder="Parle à NOVA…"><button type="button" class="mic" id="mic">🎙️</button><button type="submit">➤</button></form>
+</main><script>
+const chat=document.querySelector('#chat'),form=document.querySelector('#form'),input=document.querySelector('#input'),mic=document.querySelector('#mic'),status=document.querySelector('#status');
+let listening=false,recognition=null;
+function add(t,c){const w=chat.querySelector('.welcome');if(w)w.remove();const d=document.createElement('div');d.className='msg '+c;d.textContent=t;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+function speak(t){if('speechSynthesis' in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=.98;speechSynthesis.speak(u)}}
+function reply(t){add(t,'nova');speak(t)}
+function handle(t){let x=t.toLowerCase();if(x.includes('bonjour')||x.includes('salut'))return'Bonjour. Je suis NOVA. Je suis prête.';if(x.includes('qui es'))return'Je suis NOVA, ton interface d’assistant central.';return'Commande reçue. Le noyau vocal est actif. Nous pouvons maintenant ajouter la mémoire et l’orchestrateur.'}
+function send(t){t=t.trim();if(!t)return;add(t,'user');input.value='';setTimeout(()=>reply(handle(t)),250)}
+form.onsubmit=e=>{e.preventDefault();send(input.value)}
+if('SpeechRecognition'in window||'webkitSpeechRecognition'in window){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;recognition.onstart=()=>{listening=true;document.body.classList.add('listening');status.textContent='écoute…'};recognition.onend=()=>{listening=false;document.body.classList.remove('listening');status.textContent='prête'};recognition.onerror=()=>{status.textContent='micro indisponible'};recognition.onresult=e=>send(e.results[0][0].transcript);mic.onclick=()=>listening?recognition.stop():recognition.start()}else mic.onclick=()=>{status.textContent='Dictée iPhone disponible';input.focus()}
 </script></body></html>
